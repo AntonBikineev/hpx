@@ -1180,10 +1180,10 @@ namespace hpx { namespace lcos
     ///////////////////////////////////////////////////////////////////////////
     // extension: create a pre-initialized future object
     template <typename Result>
-    future<typename util::detail::decay_unwrap<Result>::type>
+    future<typename util::decay_unwrap<Result>::type>
     make_ready_future(Result && init)
     {
-        typedef typename util::detail::decay_unwrap<Result>::type result_type;
+        typedef typename util::decay_unwrap<Result>::type result_type;
         typedef lcos::detail::future_data<result_type> shared_state;
 
         boost::intrusive_ptr<shared_state> p(new shared_state());
@@ -1196,10 +1196,10 @@ namespace hpx { namespace lcos
     // extension: create a pre-initialized future object which holds the
     // given error
     template <typename Result>
-    future<typename util::detail::decay_unwrap<Result>::type>
+    future<typename util::decay_unwrap<Result>::type>
     make_error_future(boost::exception_ptr const& e)
     {
-        typedef typename util::detail::decay_unwrap<Result>::type result_type;
+        typedef typename util::decay_unwrap<Result>::type result_type;
         typedef lcos::detail::future_data<result_type> shared_state;
 
         boost::intrusive_ptr<shared_state> p(new shared_state());
@@ -1212,11 +1212,11 @@ namespace hpx { namespace lcos
     // extension: create a pre-initialized future object which gets ready at
     // a given point in time
     template <typename Result>
-    future<typename util::detail::decay_unwrap<Result>::type>
+    future<typename util::decay_unwrap<Result>::type>
     make_ready_future_at(boost::posix_time::ptime const& at,
         Result && init)
     {
-        typedef typename util::detail::decay_unwrap<Result>::type result_type;
+        typedef typename util::decay_unwrap<Result>::type result_type;
         typedef lcos::detail::timed_future_data<result_type> shared_state;
 
         using traits::future_access;
@@ -1225,7 +1225,7 @@ namespace hpx { namespace lcos
     }
 
     template <typename Clock, typename Duration, typename Result>
-    future<typename util::detail::decay_unwrap<Result>::type>
+    future<typename util::decay_unwrap<Result>::type>
     make_ready_future_at(boost::chrono::time_point<Clock, Duration> const& at,
         Result && init)
     {
@@ -1234,11 +1234,11 @@ namespace hpx { namespace lcos
     }
 
     template <typename Result>
-    future<typename util::detail::decay_unwrap<Result>::type>
+    future<typename util::decay_unwrap<Result>::type>
     make_ready_future_after(boost::posix_time::time_duration const& d,
         Result && init)
     {
-        typedef typename util::detail::decay_unwrap<Result>::type result_type;
+        typedef typename util::decay_unwrap<Result>::type result_type;
         typedef lcos::detail::timed_future_data<result_type> shared_state;
 
         using traits::future_access;
@@ -1247,7 +1247,7 @@ namespace hpx { namespace lcos
     }
 
     template <typename Rep, typename Period, typename Result>
-    future<typename util::detail::decay_unwrap<Result>::type>
+    future<typename util::decay_unwrap<Result>::type>
     make_ready_future_after(boost::chrono::duration<Rep, Period> const& d,
         Result && init)
     {

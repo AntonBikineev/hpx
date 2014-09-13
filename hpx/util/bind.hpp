@@ -178,34 +178,8 @@ namespace hpx { namespace util
         }
 
         ///////////////////////////////////////////////////////////////////////
-        template <
-            typename F, typename BoundArgs, typename UnboundArgs
-          , typename Enable = void
-        >
-        struct bind_invoke_impl;
-
         template <typename F, typename BoundArgs, typename UnboundArgs>
-        struct bind_invoke_impl<
-            F, BoundArgs, UnboundArgs
-          , typename boost::enable_if_c<
-                util::tuple_size<BoundArgs>::value == 0
-            >::type
-        >
-        {
-            typedef typename util::detail::result_of_or<
-                  F()
-                , cannot_be_called
-            >::type type;
-
-            static BOOST_FORCEINLINE
-            type call(
-                F& f, BoundArgs& bound_args
-              , UnboundArgs&& unbound_args
-            )
-            {
-                return util::invoke_r<type>(f);
-            }
-        };
+        struct bind_invoke_impl;
 
         template <typename F, typename ...Ts, typename UnboundArgs>
         struct bind_invoke_impl<

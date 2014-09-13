@@ -36,10 +36,10 @@ namespace hpx { namespace util { namespace detail
 
     ///////////////////////////////////////////////////////////////////////////
     template <typename Left, typename Right>
-    struct _make_index_pack_join;
+    struct make_index_pack_join;
 
     template <std::size_t... Left, std::size_t... Right>
-    struct _make_index_pack_join<
+    struct make_index_pack_join<
         pack_c<std::size_t, Left...>
       , pack_c<std::size_t, Right...>
     > : pack_c<std::size_t, Left..., (sizeof...(Left) + Right)...>
@@ -47,7 +47,7 @@ namespace hpx { namespace util { namespace detail
 
     template <std::size_t N>
     struct make_index_pack
-      : _make_index_pack_join<
+      : make_index_pack_join<
             typename make_index_pack<N / 2>::type
           , typename make_index_pack<N - N / 2>::type
         >
@@ -114,6 +114,45 @@ namespace hpx { namespace util { namespace detail
     struct contains<T, pack<Ts...> >
       : any_of<pack<boost::is_same<T, Ts>...> >
     {};
+    
+    ///////////////////////////////////////////////////////////////////////////
+    template <typename ...Ts>
+    struct front
+    {};
+
+    template <typename T, typename ...Ts>
+    struct front<T, Ts...>
+      : boost::mpl::identity<T>
+    {
+        static T&& call(T&& v, Ts&&...) BOOST_NOEXCEPT
+        {
+            return std::forward<T>(v);
+        }
+    };
+
+    template <typename ...Ts>
+    struct back
+    {};
+
+    template <typename T>
+    struct back<T>
+      : boost::mpl::identity<T>
+    {
+        static T&& call(T&& v) BOOST_NOEXCEPT
+        {
+            return std::forward<T>(v);
+        }
+    };
+
+    template <typename T, typename ...Ts>
+    struct back<T, Ts...>
+      : back<Ts...>
+    {
+        static typename back<Ts...>::type&& call(T&& v, Ts&&... vs) BOOST_NOEXCEPT
+        {
+            return back<Ts...>::call(std::forward<Ts>(vs)...);
+        }
+    };
 }}}
 
 #endif

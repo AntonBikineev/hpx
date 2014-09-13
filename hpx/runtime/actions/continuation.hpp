@@ -34,13 +34,15 @@ namespace hpx
     apply(hpx::actions::action<Component, Result, Arguments, Derived>,
         naming::id_type const&, Arg &&);
 
-    template <typename F, typename Arg1, typename Arg2>
+    template <typename F, typename ...Ts>
     inline typename boost::enable_if_c<
-        traits::detail::is_callable_not_action<F(Arg1, Arg2)>::value
+        traits::detail::is_callable_not_action<
+            typename util::decay<F>::type(typename util::decay<Ts>::type...)
+        >::value
      && !traits::is_bound_action<typename util::decay<F>::type>::value
       , bool
     >::type
-    apply(F && f, Arg1 &&, Arg2 &&);
+    apply(F && f, Ts &&... vs);
 
     template <typename Component, typename Result, typename Arguments,
         typename Derived, typename Arg0, typename F>

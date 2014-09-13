@@ -31,15 +31,7 @@ namespace hpx { namespace util
     {};
 
     ///////////////////////////////////////////////////////////////////////////
-    template <typename R, typename FR, typename ...Ps, typename ...Ts>
-    HPX_MAYBE_FORCEINLINE
-    R
-    invoke_r(FR (*f)(Ps...), Ts&&... vs)
-    {
-        return util::void_guard<R>(),
-            f(std::forward<Ts>(vs)...);
-    }
-
+    // (t1.*f)(t2, ..., tN)
     template <typename R, typename FR, typename C, typename ...Ps
       , typename T, typename ...Ts>
     HPX_MAYBE_FORCEINLINE
@@ -57,17 +49,19 @@ namespace hpx { namespace util
     template <typename R, typename FR, typename C, typename ...Ps
       , typename T, typename ...Ts>
     HPX_MAYBE_FORCEINLINE
-    typename boost::disable_if_c<
+    typename boost::enable_if_c<
         boost::is_base_of<C, typename util::decay<T>::type>::value
-     || boost::is_reference_wrapper<typename util::decay<T>::type>::value
+     && !boost::is_reference_wrapper<typename util::decay<T>::type>::value
       , R
     >::type
-    invoke_r(FR (C::*f)(Ps...), T&& t, Ts&&... vs)
+    invoke_r(FR (C::*f)(Ps...) const, T&& t, Ts&&... vs)
     {
         return util::void_guard<R>(),
-            ((*std::forward<T>(t)).*f)(std::forward<Ts>(vs)...);
+            (std::forward<T>(t).*f)(std::forward<Ts>(vs)...);
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    // (t1.get().*f)(t2, ..., tN)
     template <typename R, typename FR, typename C, typename ...Ps
       , typename T, typename ...Ts>
     HPX_MAYBE_FORCEINLINE
@@ -86,14 +80,29 @@ namespace hpx { namespace util
       , typename T, typename ...Ts>
     HPX_MAYBE_FORCEINLINE
     typename boost::enable_if_c<
-        boost::is_base_of<C, typename util::decay<T>::type>::value
-     && !boost::is_reference_wrapper<typename util::decay<T>::type>::value
+        boost::is_reference_wrapper<typename util::decay<T>::type>::value
       , R
     >::type
     invoke_r(FR (C::*f)(Ps...) const, T&& t, Ts&&... vs)
     {
         return util::void_guard<R>(),
-            (std::forward<T>(t).*f)(std::forward<Ts>(vs)...);
+            ((t.get()).*f)(std::forward<Ts>(vs)...);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // ((*t1).*f)(t2, ..., tN)
+    template <typename R, typename FR, typename C, typename ...Ps
+      , typename T, typename ...Ts>
+    HPX_MAYBE_FORCEINLINE
+    typename boost::disable_if_c<
+        boost::is_base_of<C, typename util::decay<T>::type>::value
+     || boost::is_reference_wrapper<typename util::decay<T>::type>::value
+      , R
+    >::type
+    invoke_r(FR (C::*f)(Ps...), T&& t, Ts&&... vs)
+    {
+        return util::void_guard<R>(),
+            ((*std::forward<T>(t)).*f)(std::forward<Ts>(vs)...);
     }
 
     template <typename R, typename FR, typename C, typename ...Ps
@@ -110,17 +119,56 @@ namespace hpx { namespace util
             ((*std::forward<T>(t)).*f)(std::forward<Ts>(vs)...);
     }
 
-    template <typename R, typename FR, typename C, typename ...Ps
-      , typename T, typename ...Ts>
+    ///////////////////////////////////////////////////////////////////////////
+    // t1.*f
+    template <typename R, typename FR, typename C, typename T>
+    HPX_MAYBE_FORCEINLINE
+    typename boost::enable_if_c<
+        boost::is_base_of<C, typename util::decay<T>::type>::value
+     && !boost::is_reference_wrapper<typename util::decay<T>::type>::value
+      , R
+    >::type
+    invoke_r(FR C::*f, T && t)
+    {
+        return util::void_guard<R>(), (std::forward<T>(t).*f);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // t1.get().*f
+    template <typename R, typename FR, typename C, typename T>
     HPX_MAYBE_FORCEINLINE
     typename boost::enable_if_c<
         boost::is_reference_wrapper<typename util::decay<T>::type>::value
       , R
     >::type
-    invoke_r(FR (C::*f)(Ps...) const, T&& t, Ts&&... vs)
+    invoke_r(FR C::*f, T && t)
+    {
+        return util::void_guard<R>(), ((t.get()).*f);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // (*t1).*f
+    template <typename R, typename FR, typename C, typename T>
+    HPX_MAYBE_FORCEINLINE
+    typename boost::disable_if_c<
+        boost::is_base_of<C, typename util::decay<T>::type>::value
+     || boost::is_reference_wrapper<typename util::decay<T>::type>::value
+      , R
+    >::type
+    invoke_r(FR C::*f, T && t)
+    {
+        return util::void_guard<R>(), ((*std::forward<T>(t)).*f);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // f(t1, t2, ..., tN)
+    template <typename R, typename FR, typename ...Ps, typename ...Ts>
+    HPX_MAYBE_FORCEINLINE
+    R
+    invoke_r(FR (*f)(Ps...), Ts&&... vs)
     {
         return util::void_guard<R>(),
-            ((t.get()).*f)(std::forward<Ts>(vs)...);
+            f(std::forward<Ts>(vs)...);
     }
 
     template <typename R, typename F, typename ...Ts>
@@ -129,7 +177,7 @@ namespace hpx { namespace util
         boost::is_reference_wrapper<typename util::decay<F>::type>::value
       , R
     >::type
-    invoke_r(F && f, Ts&&... vs)
+    invoke_r(F&& f, Ts&&... vs)
     {
         return util::void_guard<R>(),
             (f.get())(std::forward<Ts>(vs)...);
@@ -139,11 +187,11 @@ namespace hpx { namespace util
     HPX_MAYBE_FORCEINLINE
     typename boost::disable_if_c<
         boost::is_function<typename boost::remove_pointer<typename util::decay<F>::type>::type>::value
-     || boost::is_member_function_pointer<typename util::decay<F>::type>::value
+     || boost::is_member_pointer<typename util::decay<F>::type>::value
      || boost::is_reference_wrapper<typename util::decay<F>::type>::value
       , R
     >::type
-    invoke_r(F && f, Ts&&... vs)
+    invoke_r(F&& f, Ts&&... vs)
     {
         return util::void_guard<R>(),
             std::forward<F>(f)(std::forward<Ts>(vs)...);
@@ -186,7 +234,7 @@ namespace hpx { namespace util
      || boost::is_member_function_pointer<typename util::decay<F>::type>::value
       , typename invoke_result_of<F(Ts...)>::type
     >::type
-    invoke(F && f, Ts&&... vs)
+    invoke(F&& f, Ts&&... vs)
     {
         typedef typename invoke_result_of<F(Ts...)>::type result_type;
 
